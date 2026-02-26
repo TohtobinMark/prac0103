@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         // Добавляем тестовые данные если нужно
         addSampleData()
 
-        // Загружаем и отображаем продукты
+        // Загружаем и отображаем заметки
         loadNotes()
     }
 
@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         val cursor = dbHelper.getAllNotes()
         if (cursor != null) {
             if (cursor.count == 0) {
-                // Добавляем тестовые продукты
+                // Добавляем тестовые заметки
                 dbHelper.insertNote( "Главное приложение", "Сделать RecyclerView для вывода списка заметок", "26.02.2026")
                 dbHelper.insertNote("Метод ", "Реализовать метод loadNotes() для загрузки заметок из базы данных", "26.02.2026")
                 dbHelper.insertNote( "База данных", "Настроить SQLiteOpenHelper для создания таблицы notes с полями:\n" +
