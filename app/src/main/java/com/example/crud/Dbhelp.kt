@@ -13,7 +13,7 @@ const val COLUMN_TITLE = "title"
 const val COLUMN_CONTENT = "content"
 const val COLUMN_DATE = "date"
 
-class Dbhelp(context: Context): SQLiteOpenHelper(context, "mark.db", null, 3) {
+class Dbhelp(context: Context): SQLiteOpenHelper(context, "mark.db", null, 4) {
     override fun onCreate(db: SQLiteDatabase?) {
         val createTableQuery = "CREATE TABLE " +
                 "$TABLE_NAME (" +
@@ -28,26 +28,9 @@ class Dbhelp(context: Context): SQLiteOpenHelper(context, "mark.db", null, 3) {
         onCreate(db)
     }
 
-    fun insertNote(title: String, content: String, date: String): Long {
-        val db = this.writableDatabase // Получение дб в режими записи
-        val values = ContentValues().apply {
-            put(COLUMN_TITLE, title)
-            put(COLUMN_CONTENT, content)
-            put(COLUMN_DATE, date)
-        }
-        val newRowId = db.insert(TABLE_NAME, null, values)
-        db.close()
-        return newRowId
-    }
-
-    fun getAllNotes(): Cursor? {
-        val db = this.readableDatabase
-        return db.rawQuery("SELECT * FROM $TABLE_NAME", null)
-    }
-
     fun getAllNotesAsList(): List<Note> {
-        val productList = mutableListOf<Note>()
-        val db = this.readableDatabase // Get the database in read mode
+        val noteList = mutableListOf<Note>()
+        val db = this.readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_NAME", null)
 
 
@@ -64,11 +47,67 @@ class Dbhelp(context: Context): SQLiteOpenHelper(context, "mark.db", null, 3) {
                     content = it.getString(contentColumn),
                     date = it.getString(dateColumn)
                 )
-                productList.add(note)
+                noteList.add(note)
             }
         }
         cursor.close()
         db.close()
-        return productList
+        return noteList
+    }
+
+    fun insertNote(note: Note): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_TITLE, note.title)
+            put(COLUMN_CONTENT, note.content)
+            put(COLUMN_DATE, note.date)
+        }
+        val id = db.insert(TABLE_NAME, null, values)
+        db.close()
+        return id
+    }
+
+    fun deleteNote(id: Int) {
+        val db = writableDatabase
+        db.delete(TABLE_NAME, "$COLUMN_ID = ?", arrayOf(id.toString()))
+        db.close()
+    }
+
+    fun updateNote(note: Note): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_TITLE, note.title)
+            put(COLUMN_CONTENT, note.content)
+            put(COLUMN_DATE, note.date)
+        }
+        val rows = db.update(TABLE_NAME, values, "$COLUMN_ID = ?", arrayOf(note.id.toString()))
+        db.close()
+        return rows
+    }
+
+    fun searchNotes(query: String): List<Note> {
+        val notes = mutableListOf<Note>()
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_NAME,
+            null,
+            "$COLUMN_TITLE LIKE ? OR $COLUMN_CONTENT LIKE ?",
+            arrayOf("%$query%", "%$query%"),
+            null, null, "$COLUMN_DATE DESC"
+        )
+
+        cursor.use {
+            while (it.moveToNext()) {
+                val note = Note(
+                    id = it.getInt(it.getColumnIndexOrThrow(COLUMN_ID)),
+                    title = it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE)),
+                    content = it.getString(it.getColumnIndexOrThrow(COLUMN_CONTENT)),
+                    date = it.getString(it.getColumnIndexOrThrow(COLUMN_DATE))
+                )
+                notes.add(note)
+            }
+        }
+        db.close()
+        return notes
     }
 }
